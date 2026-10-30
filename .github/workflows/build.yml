@@ -99,6 +99,18 @@ jobs:
           make test-dependencies
       - name: Version Snapshot
         run: pip freeze
+      - name: Start MinIO server
+        run: |
+          curl -fsSL https://dl.min.io/server/minio/release/linux-amd64/minio -o /usr/local/bin/minio
+          chmod +x /usr/local/bin/minio
+          MINIO_ROOT_USER=minioadmin MINIO_ROOT_PASSWORD=minioadmin \
+            minio server /tmp/minio-data --quiet &
+          for i in $(seq 1 30); do
+            if curl -sf http://127.0.0.1:9000/minio/health/live; then
+              echo "MinIO is ready"; break
+            fi
+            echo "Waiting for MinIO ($i/30)..."; sleep 1
+          done
       - name: Test
         id: Test
         run: make test-server
@@ -178,6 +190,18 @@ jobs:
         run: |
           make install-server
           make install-examples
+      - name: Start MinIO server
+        run: |
+          curl -fsSL https://dl.min.io/server/minio/release/linux-amd64/minio -o /usr/local/bin/minio
+          chmod +x /usr/local/bin/minio
+          MINIO_ROOT_USER=minioadmin MINIO_ROOT_PASSWORD=minioadmin \
+            minio server /tmp/minio-data --quiet &
+          for i in $(seq 1 30); do
+            if curl -sf http://127.0.0.1:9000/minio/health/live; then
+              echo "MinIO is ready"; break
+            fi
+            echo "Waiting for MinIO ($i/30)..."; sleep 1
+          done
       - name: Cypress
         run: make test-integration
       - name: Upload coverage reports to Codecov
