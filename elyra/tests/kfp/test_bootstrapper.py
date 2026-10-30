@@ -53,8 +53,27 @@ RESOURCES_DIR = os.path.join(ELYRA_ROOT_DIR, "elyra", "tests", "kfp", "resources
 
 @pytest.fixture(scope="module", autouse=True)
 def start_minio():
-    """Start the minio container to simulate COS."""
+    """Start the minio container to simulate COS, or reuse an already-running instance.
 
+    When running in CI the workflow provisions a MinIO service container before the
+    job starts (see ``services.minio`` in build.yml).  In that case the port is
+    already bound and Docker would fail with exit-code 125 if we tried to start a
+    second container.  We detect this by attempting a TCP connect before touching
+    Docker at all.  If MinIO is already reachable we skip the Docker lifecycle
+    entirely and just yield so that the tests can proceed.
+    """
+    import socket
+
+    host, port_str = MINIO_HOST_PORT.split(":")
+    try:
+        with socket.create_connection((host, int(port_str)), timeout=2):
+            # MinIO is already running (e.g. GHA service container) — nothing to do.
+            yield None
+            return
+    except OSError:
+        pass
+
+    # MinIO is not yet reachable; start it via Docker.
     # The docker run command will fail if an instance of the test_minio container is running.
     # We'll make a "silent" attempt to start.  If that fails, assume its due to the container
     # conflict, force its shutdown, and try once more.  If successful, yield the minio instance
@@ -64,13 +83,23 @@ def start_minio():
     # interrupts like SIGQUIT (ctrl-\) or multiple SIGINTs can still orphan the container, so
     # we still need the pre-yield behavior.
 
-    minio = start_minio_container(False)
-    if minio is None:  # Got a failure. Shutdown (assumed) container and try once more.
+    minio_proc = start_minio_container(False)
+    if minio_proc is None:  # Got a failure. Shutdown (assumed) container and try once more.
         stop_minio_container()
-        minio = start_minio_container(True)
+        minio_proc = start_minio_container(True)
 
-    time.sleep(3)  # give container a chance to start
-    yield minio
+    # Wait for MinIO to become reachable instead of a fixed sleep.
+    deadline = time.monotonic() + 30
+    while time.monotonic() < deadline:
+        try:
+            with socket.create_connection((host, int(port_str)), timeout=1):
+                break
+        except OSError:
+            time.sleep(0.5)
+    else:
+        raise RuntimeError(f"MinIO did not become reachable at {MINIO_HOST_PORT} within 30 s")
+
+    yield minio_proc
     stop_minio_container()
 
 
