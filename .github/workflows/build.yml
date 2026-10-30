@@ -87,19 +87,6 @@ jobs:
     strategy:
       matrix:
         python-version: ['3.11', '3.12', '3.13']
-    services:
-      minio:
-        image: bitnami/minio:latest
-        env:
-          MINIO_ROOT_USER: minioadmin
-          MINIO_ROOT_PASSWORD: minioadmin
-        ports:
-          - 9000:9000
-        options: >-
-          --health-cmd "curl -f http://localhost:9000/minio/health/live"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 10
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v5

@@ -30,7 +30,7 @@ const docker = spawn('docker', [
   CONTAINER_NAME,
   '-p',
   '9000:9000',
-  'minio/minio',
+  'quay.io/minio/minio',
   'server',
   '/data'
 ]);

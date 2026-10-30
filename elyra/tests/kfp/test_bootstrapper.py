@@ -37,7 +37,7 @@ from elyra.kfp import bootstrapper
 
 # To run this test from an IDE:
 # 1. set PYTHONPATH='`path-to-repo`/etc/docker-scripts' and working directory to `path-to-repo`
-# 2. Manually launch test_minio container: docker run --name test_minio -d -p 9000:9000 minio/minio server /data
+# 2. Manually launch test_minio container: docker run --name test_minio -d -p 9000:9000 quay.io/minio/minio server /data
 #    (this is located in Makefile)
 #
 # NOTE: Any changes to elyra/tests/kfp/resources/test-notebookA.ipynb require an
@@ -107,7 +107,7 @@ def start_minio_container(raise_on_failure: bool = False) -> Optional[CompletedP
     minio = None
     try:
         minio = run(
-            ["docker", "run", "--name", "test_minio", "-d", "-p", "9000:9000", "minio/minio", "server", "/data"],
+            ["docker", "run", "--name", "test_minio", "-d", "-p", "9000:9000", "quay.io/minio/minio", "server", "/data"],
             check=True,
         )
     except CalledProcessError as ex:
