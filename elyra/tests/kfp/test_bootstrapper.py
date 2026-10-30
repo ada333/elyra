@@ -107,7 +107,18 @@ def start_minio_container(raise_on_failure: bool = False) -> Optional[CompletedP
     minio = None
     try:
         minio = run(
-            ["docker", "run", "--name", "test_minio", "-d", "-p", "9000:9000", "quay.io/minio/minio", "server", "/data"],
+            [
+                "docker",
+                "run",
+                "--name",
+                "test_minio",
+                "-d",
+                "-p",
+                "9000:9000",
+                "quay.io/minio/minio",
+                "server",
+                "/data",
+            ],
             check=True,
         )
     except CalledProcessError as ex:
