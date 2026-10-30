@@ -35,11 +35,11 @@ const dockerLog = fs.createWriteStream(path.join(logDir, 'docker.log'));
  * binary before this script runs).  Returns a Promise that resolves to true if
  * reachable, false otherwise.
  */
-function isMinioRunning(): Promise<boolean> {
-  return new Promise(resolve => {
+const isMinioRunning = (): Promise<boolean> =>
+  new Promise((resolve) => {
     const req = http.get(
       `http://127.0.0.1:${MINIO_PORT}/minio/health/live`,
-      res => {
+      (res) => {
         resolve(res.statusCode === 200);
         res.resume();
       }
@@ -50,7 +50,6 @@ function isMinioRunning(): Promise<boolean> {
     });
     req.on('error', () => resolve(false));
   });
-}
 
 const handleTeardown = (): void => {
   spawn('docker', ['kill', CONTAINER_NAME]);
@@ -62,7 +61,7 @@ process.on('SIGTERM', handleTeardown);
 
 // Only start a Docker container when MinIO is not already available (e.g. in
 // local development).  In CI the minio binary is started before this script.
-isMinioRunning().then(already => {
+isMinioRunning().then((already) => {
   if (already) {
     dockerLog.write('MinIO already running on port 9000; skipping Docker.\n');
     return;
